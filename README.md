@@ -23,9 +23,10 @@ This project demonstrates how to create and manage a Docker Swarm cluster using 
     - [Publish the Application Global](#publish-the-application-global)
     - [Inspecting Services](#inspecting-services)
     - [Scaling Services](#scaling-services)
-    - [Deleting Services](#deleting-services)
     - [Applying Rolling Updates](#applying-rolling-updates)
     - [Draining Nodes](#draining-nodes)
+    - [Deleting Services](#deleting-services)
+    - [Deploying Microservces to Docker Swarm](#deploying-microservces-to-docker-swarm)
   - [Swarm Mode Routing Mesh](#swarm-mode-routing-mesh)
   - [Best Practices](#best-practices)
   - [Conclusion](#conclusion)
@@ -151,7 +152,7 @@ docker pull tutum/hello-world
    ```bash
    docker service create --name webapp --published published=8080,target=80 tutum/hello-world
    ```
-   ![alt text](image-1.png)
+   ![alt text](../images/image-1.png)
 
 2. **List Service**:
 ```bash
@@ -177,9 +178,8 @@ ID             NAME       IMAGE                      NODE      DESIRED STATE   C
 
 The web app was published on the node3, the `Leader` or `manager` node. This means that the application is published locally. 
 
-4. **Access the Web Application**:
-The web application can be accessed on http://<IP>:8080.<p>
-![alt text](image-2.png)
+4. **Access the Web Application**:<p>
+![alt text](../images/image-2.png)
 
 ## Managing the Swarm
 ### Publish the Application Global
@@ -257,7 +257,7 @@ a358e55cdd90   tutum/hello-world:latest   "/bin/sh -c 'php-fpm…"   19 minutes 
    docker service inspect --pretty webapp
    ```
 
-   ![alt text](image-3.png)
+   ![alt text](../images/image-3.png)
 
 
 ### Scaling Services
@@ -351,35 +351,201 @@ ok16fjx4n1j7   webapp.12   tutum/hello-world:latest   node2     Running         
 tj7ctl91gse5   webapp.14   tutum/hello-world:latest   node3     Running         Running 2 minutes ago              
 geru9uuxuos5   webapp.15   tutum/hello-world:latest   node1     Running         Running 2 minutes ago
 ```
-
 Once again, each node or woker (including the manager) is running 5 tasks. 
-### Deleting Services
-1. **Remove the Service**:
-   ```bash
-   docker service rm hello-world
-   ```
+
 
 ### Applying Rolling Updates
 1. **Update the Service**:
-   ```bash
-   docker service update --image tutum/hello-world:latest hello-world
-   ```
+```bash
+docker service create \
+  --replicas 3 \
+  --name redis \
+  --update-delay 10s \
+  tutum/hello-world:latest
+```
+The `--update-delay` flag configures the time delay between updates to a service task or sets of tasks.
+> Results:
+>
+```bash
+huvy6wgdxf1ogxcglriyjro4a
+overall progress: 1 out of 1 tasks 
+1/1: running   [==================================================>] 
+verify: Waiting 5 seconds to verify that tasks are stable... 
+service update paused: update paused due to failure or early termination of task sdh2nzyunhvoe1dsc0xdyc5rj
+```
+
+Checking why the update results: Updated was successful.
+```bash
+docker service inspect --pretty webapp
+```
+>
+> Results:
+>
+```yml
+ID:             it5livppxqm1w4o6mxxx
+Name:           webapp
+Service Mode:   Replicated
+ Replicas:      1
+Placement:
+UpdateConfig:
+```
 
 ### Draining Nodes
-1. **Drain a Node**:
+At times, like during `scheduled maintenance`, there might be the need to set a node to `Drain` availability. This status prevents the node from accepting new tasks from the swarm manager. Additionally, it instructs the manager to stop any tasks currently running on that node and to launch replica tasks on a node with `Active` availability.
+1. **Confirm if all service nodes are active**:
+```bash
+docker node ls
+```
+
+> Results:
+>
+```bash
+ID                            HOSTNAME   STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+qbgxn0pzximzyz918ncss5zio     node1      Ready     Active                          24.0.7
+u4i10vduj1q2gydpfmiwjq5ek     node2      Ready     Active                          24.0.7
+sg8zyjdc4o93h72bawlht88bu *   node3      Ready     Active         Leader           24.0.7
+```
+2. **Drain a Node**:
    ```bash
-   docker node update --availability drain <node-id>
+   docker node update --availability drain node2
    ```
+**Confirm Node Drain**:
+```bash
+
+```
+
+>
+> Results: node is drained.
+```
+ID:                     u4i10vduj1q2gydpfmiwjq5ek
+Hostname:               node2
+Joined at:              2024-09-12 09:31:10.699654124 +0000 utc
+Status:
+ State:                 Ready
+ Availability:          Drain            <<<=====================================
+```
+**Let's see how the swarm manager updated the task assignments for the redis service:**
+```bash
+docker service ps webapp 
+```
+
+Swarm has redistributed all tasks to node3. <p>
+![alt text](../images/image-7.png)
+
+**Reactivate Node2**:
+
+```bash
+docker node update --availability active node2
+```
+
+**Confirm reactivation**:
+```bash
+docker node inspect --pretty node2
+```
+
+> Output:
+>
+```yml
+ID:                     u4i10vduj1q2gydpfmiwjq5ek
+Hostname:               node2
+Joined at:              2024-09-12 09:31:10.699654124 +0000 utc
+Status:
+ State:                 Ready
+ Availability:          Active              <<<========================================
+```
+
+### Deleting Services 
+1. **Remove the Service**: In this session I will remove the hello-world app and deploy a simple microservice, Docker's Example Voting App, on the swarm. 
+```bash
+docker service rm webapp
+```
+
+### Deploying Microservces to Docker Swarm
+
+2. **Deploy the Microservice**: <p>
+Clone the app and change directory to the voting app
+
+```bash
+git clone https://github.com/docker/example-voting-app && cd example-voting-app
+```
+
+3. Deploy the Service Application
+The voting app is a group of services to be deployed. This can be referred to as a `stack`. A stack is a collection of services deployed together. The `docker-stack.yml` file in the current directory will be used to deploy the voting application as a stack on the swarm. 
+
+```bash
+docker stack deploy --compose-file=docker-stack.yml voting_stack
+```
+> Result
+>
+```sh
+Creating network voting_stack_frontend
+Creating network voting_stack_backend
+Creating service voting_stack_worker
+Creating service voting_stack_redisCreating service voting_stack_db
+Creating service voting_stack_vote
+Creating service voting_stack_result
+```
+4. Check No. Stacks Created
+```bash
+docker stack ls
+```
+>
+> Result:
+>
+```
+NAME      SERVICES
+voteapp   6
+```
+
+5. **List Services**:
+```bash
+docker service ls 
+```
+> Result:
+```bash
+ID             NAME                 MODE         REPLICAS   IMAGE                                          PORTS
+huvy6wgdxf1o   voteapp_db           replicated   1/1        postgres:9.4                                   
+v6xgkm28d57y   voteapp_redis        replicated   1/1        redis:alpine                                   
+i3ivb2ge3n7x   voteapp_result       replicated   1/1        dockersamples/examplevotingapp_result:latest   *:5001->80/tcp
+414rk8btrphs   voteapp_visualizer   replicated   1/1        dockersamples/visualizer:latest                *:8080->8080/tcp
+lq0zl131gumc   voteapp_vote         replicated   2/2        dockersamples/examplevotingapp_vote:latest     *:80->80/tcp
+4x4u2rkaxubd   voteapp_worker       replicated   1/1        dockersamples/examplevotingapp_worker:latest  
+```
+
+6. **List stack services**:
+```bash
+docker stack services voteapp
+```
+> Results:
+```bash
+ID             NAME                 MODE         REPLICAS   IMAGE                                          PORTS
+huvy6wgdxf1o   voteapp_db           replicated   1/1        postgres:9.4                                   
+v6xgkm28d57y   voteapp_redis        replicated   1/1        redis:alpine                                   
+i3ivb2ge3n7x   voteapp_result       replicated   1/1        dockersamples/examplevotingapp_result:latest   *:5001->80/tcp
+414rk8btrphs   voteapp_visualizer   replicated   1/1        dockersamples/visualizer:latest                *:8080->8080/tcp
+lq0zl131gumc   voteapp_vote         replicated   2/2        dockersamples/examplevotingapp_vote:latest     *:80->80/tcp
+4x4u2rkaxubd   voteapp_worker       replicated   1/1        dockersamples/examplevotingapp_worker:latest 
+```
+
+7.  **Access Services on the Browser**:
+(a) Access the Frontend via http://localhost:80.<p>
+![alt text](../images/image-4.png)
+
+(b) Access the Results (backend) via http://localhost:5001.<p>
+![alt text](../images/image-5.png)
+
+(c) Visualise the services running. <p>
+![alt text](../images/image-6.png)
 
 ## Swarm Mode Routing Mesh
 Docker Swarm routing mesh allows you to access services from any node in the swarm. This simplifies service discovery and load balancing.
 
 ## Best Practices
-- Always use fixed IP addresses for your manager node.
-- Regularly monitor and manage the health of your services.
+- Always use fixed IP addresses for the manager node.
+- Regularly monitor and manage the health of the services.
 - Implement encrypted overlay networks for enhanced security.
 - Use Docker secrets to manage sensitive information.
 
 ## Conclusion
-This project provides a comprehensive guide to creating and managing a Docker Swarm cluster. By following the steps outlined, you can efficiently deploy and manage applications in a distributed environment. Adhering to best practices will ensure a secure and reliable setup.
+This project provides a comprehensive guide to creating and managing a `Docker Swarm cluster`. I have outlined the steps to efficiently deploy and manage applications in a distributed environment whilst adhering to the best practices will ensure a secure and reliable setup.
 
