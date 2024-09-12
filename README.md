@@ -1,8 +1,6 @@
 # Create-and-Manage-Services-on-Docker-Swarm
 Managing services with Docker Swarm 
 
-Here’s a GitHub-flavored Markdown document for your Docker Swarm project:
-
 # Docker Swarm Project Documentation
 
 ## Overview
