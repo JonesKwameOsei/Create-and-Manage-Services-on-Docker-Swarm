@@ -35,7 +35,7 @@ This project utilises:
 - The IP address of the manager machine (e.g., `192.168.99.100`).
 - Open ports between the hosts as specified below.
 
-For this project, I will utilise three virtual machines on [Play with Docker](https://labs.play-with-docker.com/)
+For this project, I will utilise three virtual machines on [Play with Docker](https://labs.play-wit/)
 
 ### Open Protocols and Ports
 If not opened by default, manually allow:
@@ -150,7 +150,7 @@ docker pull tutum/hello-world
    ```bash
    docker service create --name webapp --published published=8080,target=80 tutum/hello-world
    ```
-   ![alt text](../images/image-1.png)
+   ![alt text](images/image-1.png)
 
 2. **List Service**:
 ```bash
@@ -177,7 +177,7 @@ ID             NAME       IMAGE                      NODE      DESIRED STATE   C
 The web app was published on the node3, the `Leader` or `manager` node. This means that the application is published locally. 
 
 4. **Access the Web Application**:<p>
-![alt text](../images/image-2.png)
+![alt text](images/image-2.png)
 
 ## Managing the Swarm
 ### Publish the Application Global
@@ -255,7 +255,7 @@ a358e55cdd90   tutum/hello-world:latest   "/bin/sh -c 'php-fpm…"   19 minutes 
    docker service inspect --pretty webapp
    ```
 
-   ![alt text](../images/image-3.png)
+   ![alt text](images/image-3.png)
 
 
 ### Scaling Services
@@ -428,7 +428,7 @@ docker service ps webapp
 ```
 
 Swarm has redistributed all tasks to node3. <p>
-![alt text](../images/image-7.png)
+![alt text](images/image-7.png)
 
 **Reactivate Node2**:
 
@@ -527,13 +527,13 @@ lq0zl131gumc   voteapp_vote         replicated   2/2        dockersamples/exampl
 
 7.  **Access Services on the Browser**:
 (a) Access the Frontend via http://localhost:80.<p>
-![alt text](../images/image-4.png)
+![alt text](images/image-4.png)
 
 (b) Access the Results (backend) via http://localhost:5001.<p>
-![alt text](../images/image-5.png)
+![alt text](images/image-5.png)
 
 (c) Visualise the services running. <p>
-![alt text](../images/image-6.png)
+![alt text](images/image-6.png)
 
 ## Swarm Mode Routing Mesh
 Docker Swarm routing mesh allows you to access services from any node in the swarm. This simplifies service discovery and load balancing.
