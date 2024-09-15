@@ -4,7 +4,7 @@ Managing services with Docker Swarm
 # Docker Swarm Project Documentation
 
 ## Overview
-This project demonstrates how to create and manage a Docker Swarm cluster using three nodes: one manager node and two worker nodes. The tutorial will utilize the `tutum/hello-world` image as an example application. By following this guide, you will learn how to initialize a Docker Swarm, manage services, and apply best practices for a secure and efficient deployment.
+This project demonstrates how to create and manage a Docker Swarm cluster using three nodes: one manager node and two worker nodes. The project will utilize the `tutum/hello-world` image as an example application. The focus will be on initialising a Docker Swarm, managing services, and applying best practices for a secure and efficient deployment.
 
 ## Table of Contents
 - [Create-and-Manage-Services-on-Docker-Swarm](#create-and-manage-services-on-docker-swarm)
@@ -24,7 +24,7 @@ This project demonstrates how to create and manage a Docker Swarm cluster using 
     - [Applying Rolling Updates](#applying-rolling-updates)
     - [Draining Nodes](#draining-nodes)
     - [Deleting Services](#deleting-services)
-    - [Deploying Microservces to Docker Swarm](#deploying-microservces-to-docker-swarm)
+    - [Deploying Microservices to Docker Swarm](#deploying-microservces-to-docker-swarm)
   - [Swarm Mode Routing Mesh](#swarm-mode-routing-mesh)
   - [Best Practices](#best-practices)
   - [Conclusion](#conclusion)
@@ -46,7 +46,8 @@ If not opened by default, manually allow:
 For encrypted overlay networks, ensure IP protocol 50 (IPSec ESP) is allowed.
 
 ## Setting Up the Swarm
-Before the creation of `swarm`, I will check if swarm is active and running.
+Before creating the `swarm`, I will check if the swarm is active and running.
+
 ```
 docker info
 ```
@@ -65,11 +66,12 @@ docker info
   seccomp
    Profile: unconfined
 ```
-Since swarm is inactive, I will have to create it. 
+Since the swarm is inactive, I will have to create it. 
 ### Initialising the Cluster
-To create a `swarm`, it has to be initialised with the IP address of the swarm manager. It can be retireved by running:
+To create a `swarm`, it has to be initialised with the IP address of the swarm manager. It can be retrieved by running:
+
 ```
-ifconfig 
+ifconfig
 ```
 1. **On the Manager Node**: I will run:
    ```bash
@@ -89,10 +91,11 @@ To add a manager to this swarm, run 'docker swarm join-token manager' and follow
 ### Adding Nodes
 1. **On Worker Nodes**:
    - I will run the join token from the manager node:
+   
      ```bash
      docker swarm join --token SWMTKN-1-3***************************a7ut3jn1zgph4w886z47j-*********9wc0k5cbqgmfvjm **********:2377
      ```
-   - This needs to be executed on each worker node to join the swarm. Let's confirm nodes available before joing the workers to the manager node. 
+   - This must be executed on each worker node to join the swarm. Let's confirm the nodes available before joining the workers to the manager node. 
     ```bash
     docker node ls
     ```
@@ -162,7 +165,7 @@ docker service ls
 ID             NAME      MODE         REPLICAS   IMAGE                      PORTS
 ttyj5j938bxp   webapp    replicated   1/1        tutum/hello-world:latest   *:8080->80/tcp
 ```
-3. Get the worker on which the service is running one.
+3. Get the worker on which the service is running.
 ```
 docker service ps webapp
 ```
@@ -174,14 +177,14 @@ ID             NAME       IMAGE                      NODE      DESIRED STATE   C
 5dtaqjg2qmwv   webapp.1   tutum/hello-world:latest   node3     Running         Running 8 minutes ago
 ```
 
-The web app was published on the node3, the `Leader` or `manager` node. This means that the application is published locally. 
+The web app was published on node 3, the `Leader` or `manager` node. This means that the application is published locally. 
 
 4. **Access the Web Application**:<p>
 ![alt text](images/image-2.png)
 
 ## Managing the Swarm
 ### Publish the Application Global
-The web app as at now has only been published locally on the manager node. None of the worker nodes have been assigned to publish the app. To make the service available for the other service, I will first remove the local service and then make it global. 
+The web app as of now has only been published locally on the manager node. None of the worker nodes have been assigned to publish the app. To make the service available for the other service, I will first remove the local service and then make it global. 
 
 ```
 docker service rm webapp                         # Removes the local service 
@@ -209,7 +212,7 @@ ID             NAME      MODE      REPLICAS   IMAGE                      PORTS
 ys82p98ko50y   webapp    global    3/3        tutum/hello-world:latest   *:8080->80/tcp
 ```
 
-Once gain, I will query the nodes on which the services are running. 
+Once again, I will query the nodes on which the services are running. 
 ```bash
 docker service ps webapp
 ```
@@ -223,7 +226,7 @@ snccmo00tigb   webapp.336tiyodkhezyxfc1sgf2ltuk   tutum/hello-world:latest   nod
 xznoohrc30zt   webapp.q7e7kxh5vrhg4bv36olg3k0we   tutum/hello-world:latest   node1     Running         Running 12 minutes ago   
 ```
 
-The results indicates that the services were distributed accross the cluster. We can confirm from each worker node.
+The results indicate that the services were distributed across the cluster. We can confirm from each worker node.
 
 (a) On the `Node1 (worker1)`
 ```
@@ -349,7 +352,7 @@ ok16fjx4n1j7   webapp.12   tutum/hello-world:latest   node2     Running         
 tj7ctl91gse5   webapp.14   tutum/hello-world:latest   node3     Running         Running 2 minutes ago              
 geru9uuxuos5   webapp.15   tutum/hello-world:latest   node1     Running         Running 2 minutes ago
 ```
-Once again, each node or woker (including the manager) is running 5 tasks. 
+Once again, each node or worker (including the manager) is running 5 tasks. 
 
 
 ### Applying Rolling Updates
@@ -372,7 +375,7 @@ verify: Waiting 5 seconds to verify that tasks are stable...
 service update paused: update paused due to failure or early termination of task sdh2nzyunhvoe1dsc0xdyc5rj
 ```
 
-Checking why the update results: Updated was successful.
+Checking why the update results: The update was successful.
 ```bash
 docker service inspect --pretty webapp
 ```
@@ -422,7 +425,7 @@ Status:
  State:                 Ready
  Availability:          Drain            <<<=====================================
 ```
-**Let's see how the swarm manager updated the task assignments for the redis service:**
+**Let's see how the swarm manager updated the task assignments for the Redis service:**
 ```bash
 docker service ps webapp 
 ```
@@ -453,15 +456,15 @@ Status:
 ```
 
 ### Deleting Services 
-1. **Remove the Service**: In this session I will remove the hello-world app and deploy a simple microservice, Docker's Example Voting App, on the swarm. 
+1. **Remove the Service**: In this session, I will remove the hello-world app and deploy a simple microservice, Docker's Example Voting App, on the swarm. 
 ```bash
 docker service rm webapp
 ```
 
-### Deploying Microservces to Docker Swarm
+### Deploying Microservices to Docker Swarm
 
 2. **Deploy the Microservice**: <p>
-Clone the app and change directory to the voting app
+Clone the app and change the directory to the voting app
 
 ```bash
 git clone https://github.com/docker/example-voting-app && cd example-voting-app
